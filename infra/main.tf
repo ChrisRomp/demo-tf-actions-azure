@@ -15,6 +15,9 @@ terraform {
       version = "3.100.0"
     }
   }
+  backend "azurerm" {
+    use_azuread_auth = true
+  }
 }
 
 provider "azurerm" {
@@ -38,6 +41,12 @@ resource "azurerm_storage_account" "storage" {
     # public_network_access_enabled = false
 }
 
-# terraform init
-# terraform plan -out main.tfplan -var "resource_group_name=$AZURE_RESOURCE_GROUP" -var "storage_account_name=$AZURE_STORAGE_ACCOUNT_NAME"
+# STATE_RESOURCE_GROUP=xxxxe
+# STATE_STORAGE_ACCOUNT_NAME=xxxx
+# STATE_CONTAINER_NAME=tfstate
+# STATE_KEY_NAME=terraform.tfstate
+# DEPLOY_RESOURCE_GROUP=xxxx
+# DEPLOY_STORAGE_ACCOUNT_NAME=xxxx
+# terraform init -backend-config="resource_group_name=$STATE_RESOURCE_GROUP" -backend-config="storage_account_name=$STATE_STORAGE_ACCOUNT_NAME" -backend-config="container_name=$STATE_CONTAINER_NAME" -backend-config="key=$STATE_KEY_NAME"
+# terraform plan -out main.tfplan -var "resource_group_name=$DEPLOY_RESOURCE_GROUP" -var "storage_account_name=$DEPLOY_STORAGE_ACCOUNT_NAME"
 # terraform apply main.tfplan

@@ -15,7 +15,8 @@
             "extensions": [
                 "GitHub.copilot",
                 "Github.copilot-chat",
-                "HashiCorp.terraform"
+                "HashiCorp.terraform",
+                "GitHub.vscode-github-actions"
             ]
         }
     },

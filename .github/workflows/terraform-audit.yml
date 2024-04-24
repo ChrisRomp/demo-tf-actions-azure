@@ -1,0 +1,62 @@
+
+name: 'Terraform Audit'
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  terraform:
+    name: 'Terraform Plan - Audit'
+    runs-on: ubuntu-latest
+    environment: Production
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./infra
+
+    env:
+      ARM_USE_OIDC: true
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+
+    steps:
+    # Checkout the repository to the GitHub Actions runner
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    # Log into Azure CLI
+    - name: Azure Login with OIDC
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+
+    # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+    - name: Terraform Init
+      env:
+        STATE_RESOURCE_GROUP: ${{ vars.STATE_RESOURCE_GROUP }}
+        STATE_STORAGE_ACCOUNT_NAME: ${{ vars.STATE_STORAGE_ACCOUNT_NAME }}
+        STATE_CONTAINER_NAME: ${{ vars.STATE_CONTAINER_NAME || 'tfstate' }}
+        STATE_KEY_NAME: ${{ vars.STATE_KEY_NAME || 'terraform.tfstate' }}
+      working-directory: ./infra
+      run: terraform init -backend-config="resource_group_name=$STATE_RESOURCE_GROUP" -backend-config="storage_account_name=$STATE_STORAGE_ACCOUNT_NAME" -backend-config="container_name=$STATE_CONTAINER_NAME" -backend-config="key=$STATE_KEY_NAME"
+
+    # Generates an execution plan for Terraform
+    - name: Terraform Plan
+      env:
+        DEPLOY_RESOURCE_GROUP: ${{ vars.DEPLOY_RESOURCE_GROUP }}
+        DEPLOY_STORAGE_ACCOUNT_NAME: ${{ vars.DEPLOY_STORAGE_ACCOUNT_NAME }}
+      working-directory: ./infra
+      run: terraform plan -input=false -detailed-exitcode -out main.tfplan -var "resource_group_name=$DEPLOY_RESOURCE_GROUP" -var "storage_account_name=$DEPLOY_STORAGE_ACCOUNT_NAME"
