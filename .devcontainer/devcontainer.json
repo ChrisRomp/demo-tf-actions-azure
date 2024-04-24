@@ -1,0 +1,23 @@
+{
+    "name": "Default Linux Universale",
+    "image": "mcr.microsoft.com/vscode/devcontainers/universal:latest",
+    "remoteUser": "codespace",
+    "features": {
+        "ghcr.io/devcontainers/features/azure-cli:1": {},
+        "ghcr.io/devcontainers/features/terraform:1": {
+            "version": "latest",
+            "tflint": "latest",
+            "terragrunt": "0.57.8" // checksum issue with 0.57.9
+        }
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "GitHub.copilot",
+                "Github.copilot-chat",
+                "HashiCorp.terraform"
+            ]
+        }
+    },
+    "postCreateCommand": "echo 'alias tf=terraform' >> ~/.bash_aliases"
+}
