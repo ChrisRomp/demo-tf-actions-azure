@@ -33,6 +33,8 @@ jobs:
     # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_wrapper: false
 
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
@@ -42,7 +44,9 @@ jobs:
         STATE_CONTAINER_NAME: ${{ vars.STATE_CONTAINER_NAME || 'tfstate' }}
         STATE_KEY_NAME: ${{ vars.STATE_KEY_NAME || 'terraform.tfstate' }}
       working-directory: ./infra
-      run: terraform init -backend-config="resource_group_name=$STATE_RESOURCE_GROUP" -backend-config="storage_account_name=$STATE_STORAGE_ACCOUNT_NAME" -backend-config="container_name=$STATE_CONTAINER_NAME" -backend-config="key=$STATE_KEY_NAME"
+      run: |
+        set -e
+        terraform init -backend-config="resource_group_name=$STATE_RESOURCE_GROUP" -backend-config="storage_account_name=$STATE_STORAGE_ACCOUNT_NAME" -backend-config="container_name=$STATE_CONTAINER_NAME" -backend-config="key=$STATE_KEY_NAME"
 
     # Generates an execution plan for Terraform
     - name: Terraform Plan
@@ -50,4 +54,19 @@ jobs:
         DEPLOY_RESOURCE_GROUP: ${{ vars.DEPLOY_RESOURCE_GROUP }}
         DEPLOY_STORAGE_ACCOUNT_NAME: ${{ vars.DEPLOY_STORAGE_ACCOUNT_NAME }}
       working-directory: ./infra
-      run: terraform plan -input=false -detailed-exitcode -out main.tfplan -var "resource_group_name=$DEPLOY_RESOURCE_GROUP" -var "storage_account_name=$DEPLOY_STORAGE_ACCOUNT_NAME"
+      continue-on-error: false
+      run: |
+        set +e
+        terraform plan -input=false -detailed-exitcode -out main.tfplan -var "resource_group_name=$DEPLOY_RESOURCE_GROUP" -var "storage_account_name=$DEPLOY_STORAGE_ACCOUNT_NAME"
+        exitcode=$?
+        if [ $exitcode -eq 2 ]; then
+          echo "Terraform plan exited with code 2. This means that there are changes to apply."
+          echo ":warning: Configuration drift detected." >> $GITHUB_STEP_SUMMARY
+          exit 1
+        elif [ $exitcode -eq 1 ]; then
+          echo "Terraform plan exited with code 1: Error."
+          exit 1
+        else
+        echo ":white_check_mark: No configuration drift detected." >> $GITHUB_STEP_SUMMARY
+          exit 0
+        fi

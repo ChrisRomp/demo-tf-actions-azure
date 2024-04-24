@@ -44,7 +44,9 @@ jobs:
         STATE_CONTAINER_NAME: ${{ vars.STATE_CONTAINER_NAME || 'tfstate' }}
         STATE_KEY_NAME: ${{ vars.STATE_KEY_NAME || 'terraform.tfstate' }}
       working-directory: ./infra
-      run: terraform init -backend-config="resource_group_name=$STATE_RESOURCE_GROUP" -backend-config="storage_account_name=$STATE_STORAGE_ACCOUNT_NAME" -backend-config="container_name=$STATE_CONTAINER_NAME" -backend-config="key=$STATE_KEY_NAME"
+      run: |
+        set -e
+        terraform init -backend-config="resource_group_name=$STATE_RESOURCE_GROUP" -backend-config="storage_account_name=$STATE_STORAGE_ACCOUNT_NAME" -backend-config="container_name=$STATE_CONTAINER_NAME" -backend-config="key=$STATE_KEY_NAME"
 
     # Generates an execution plan for Terraform
     - name: Terraform Plan
@@ -52,11 +54,15 @@ jobs:
         DEPLOY_RESOURCE_GROUP: ${{ vars.DEPLOY_RESOURCE_GROUP }}
         DEPLOY_STORAGE_ACCOUNT_NAME: ${{ vars.DEPLOY_STORAGE_ACCOUNT_NAME }}
       working-directory: ./infra
-      run: terraform plan -input=false -out main.tfplan -var "resource_group_name=$DEPLOY_RESOURCE_GROUP" -var "storage_account_name=$DEPLOY_STORAGE_ACCOUNT_NAME"
+      run: |
+        set -e
+        terraform plan -input=false -out main.tfplan -var "resource_group_name=$DEPLOY_RESOURCE_GROUP" -var "storage_account_name=$DEPLOY_STORAGE_ACCOUNT_NAME"
 
       # On push to "main", build or change infrastructure according to Terraform configuration files
       # Note: It is recommended to set up a required "strict" status check in your repository for "Terraform Cloud". See the documentation on "strict" required status checks for more information: https://help.github.com/en/github/administering-a-repository/types-of-required-status-checks
     - name: Terraform Apply
       working-directory: ./infra
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-      run: terraform apply main.tfplan
+      run: |
+        set -e
+        terraform apply main.tfplan

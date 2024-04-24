@@ -41,7 +41,7 @@ resource "azurerm_storage_account" "storage" {
     # public_network_access_enabled = false
 }
 
-# STATE_RESOURCE_GROUP=xxxxe
+# STATE_RESOURCE_GROUP=xxxx
 # STATE_STORAGE_ACCOUNT_NAME=xxxx
 # STATE_CONTAINER_NAME=tfstate
 # STATE_KEY_NAME=terraform.tfstate
