@@ -101,7 +101,7 @@ jobs:
           
           
           </details>
-          *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Workflow: \`${{ github.workflow }}\`*`;
+          Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Workflow: \`${{ github.workflow }}\` `;
 
           // Retrieve previous bot comments for the PR
           const { data: comments } = await github.rest.issues.listComments({
@@ -112,6 +112,7 @@ jobs:
           const botComment = comments.find(comment => {
             return comment.user.type === 'Bot' && comment.body.includes('Terraform Initialization')
           });
+          console.log("botComment: " botComment);
           // Delete any previous plan output comment
           if (botComment) {
             github.rest.issues.deleteComment({
