@@ -90,8 +90,8 @@ jobs:
             .replace(clientRegex, "[client-id]")
             .replace(tenantRegex, "[tenant-id]");
           
-          const output = `#### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
-          #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+          const output = `#### Terraform Initialization :gear:\`${{ steps.init.outcome }}\`
+          #### Terraform Plan :book:\`${{ steps.plan.outcome }}\`
 
           <details><summary>Show Plan Output</summary>
           
@@ -102,7 +102,26 @@ jobs:
           
           </details>
           *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Workflow: \`${{ github.workflow }}\`*`;
-            
+
+          // Retrieve previous bot comments for the PR
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+          const botComment = comments.find(comment => {
+            return comment.user.type === 'Bot' && comment.body.includes('Terraform Initialization')
+          });
+          // Delete any previous plan output comment
+          if (botComment) {
+            github.rest.issues.deleteComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: botComment.id,
+            });
+          }
+          
+          // Add plan output to PR comments
           github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
