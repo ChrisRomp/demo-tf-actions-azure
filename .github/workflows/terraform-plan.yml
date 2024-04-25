@@ -101,7 +101,7 @@ jobs:
           
           
           </details>
-          Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Workflow: \`${{ github.workflow }}\` `;
+          `;
 
           // Retrieve previous bot comments for the PR
           const { data: comments } = await github.rest.issues.listComments({
