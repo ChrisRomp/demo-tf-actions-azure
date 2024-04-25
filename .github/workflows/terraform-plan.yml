@@ -76,7 +76,7 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
-          const planText = ${process.env.PLAN};
+          const planText = `${process.env.PLAN}`;
           // For redacting secrets
           const subId = "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
           const clientId = "${{ secrets.AZURE_CLIENT_ID }}"
@@ -84,13 +84,15 @@ jobs:
           const subRegex = new RegExp(subId, "g");
           const clientRegex = new RegExp(clientId, "g");
           const tenantRegex = new RegExp(tenantId, "g");
+
           const redactedPlan = planText
             .replace(subRegex, "[subscription-id]")
             .replace(clientRegex, "[client-id]")
             .replace(tenantRegex, "[tenant-id]");
+          
           const output = `#### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
           #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
-      
+
           <details><summary>Show Plan</summary>
           
           \`\`\`
