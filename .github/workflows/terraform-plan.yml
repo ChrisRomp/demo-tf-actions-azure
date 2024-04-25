@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
   id-token: write
 
 jobs:
@@ -44,6 +45,7 @@ jobs:
 
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
+      id: init
       env:
         STATE_RESOURCE_GROUP: ${{ vars.STATE_RESOURCE_GROUP }}
         STATE_STORAGE_ACCOUNT_NAME: ${{ vars.STATE_STORAGE_ACCOUNT_NAME }}
@@ -56,13 +58,76 @@ jobs:
 
     # Generates an execution plan for Terraform
     - name: Terraform Plan
+      id: plan
       env:
         DEPLOY_RESOURCE_GROUP: ${{ vars.DEPLOY_RESOURCE_GROUP }}
         DEPLOY_STORAGE_ACCOUNT_NAME: ${{ vars.DEPLOY_STORAGE_ACCOUNT_NAME }}
       working-directory: ./infra
       run: |
         set -e
-        terraform plan -input=false -out main.tfplan -var "resource_group_name=$DEPLOY_RESOURCE_GROUP" -var "storage_account_name=$DEPLOY_STORAGE_ACCOUNT_NAME"
+        terraform plan -no-color -input=false -out main.tfplan -var "resource_group_name=$DEPLOY_RESOURCE_GROUP" -var "storage_account_name=$DEPLOY_STORAGE_ACCOUNT_NAME"
+
+    - name: Update PR
+      id: plan-output
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      env:
+        PLAN: "${{ steps.plan.outputs.stdout }}"
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const planText = `${process.env.PLAN}`;
+          // For redacting secrets
+          const subId = "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+          const clientId = "${{ secrets.AZURE_CLIENT_ID }}"
+          const tenantId = "${{ secrets.AZURE_TENANT_ID }}"
+          const subRegex = new RegExp(subId, "g");
+          const clientRegex = new RegExp(clientId, "g");
+          const tenantRegex = new RegExp(tenantId, "g");
+
+          const redactedPlan = planText
+            .replace(subRegex, "[subscription-id]")
+            .replace(clientRegex, "[client-id]")
+            .replace(tenantRegex, "[tenant-id]");
+          
+          const output = `#### Terraform Initialization :gear:\`${{ steps.init.outcome }}\`
+          #### Terraform Plan :book:\`${{ steps.plan.outcome }}\`
+
+          <details><summary>Show Plan Output</summary>
+          
+          \`\`\`\n
+          ` + redactedPlan + `
+          \`\`\`
+          
+          
+          </details>
+          `;
+
+          // Retrieve previous bot comments for the PR
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+          const botComment = comments.find(comment => {
+            return comment.user.type === 'Bot' && comment.body.includes('Terraform Initialization')
+          });
+          // Delete any previous plan output comment
+          if (botComment) {
+            github.rest.issues.deleteComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: botComment.id,
+            });
+          }
+          
+          // Add plan output to PR comments
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: output
+          })
 
       # On push to "main", build or change infrastructure according to Terraform configuration files
       # Note: It is recommended to set up a required "strict" status check in your repository for "Terraform Cloud". See the documentation on "strict" required status checks for more information: https://help.github.com/en/github/administering-a-repository/types-of-required-status-checks
