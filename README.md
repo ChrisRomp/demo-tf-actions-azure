@@ -47,14 +47,14 @@ Prerequisites (installed automatically with Codespaces):
 
 You can see the expected environment variables defined in the [`.env.sample`](.env.sample) file.
 
-| Variable | Required | Description |
+| Variable | Required/Optional | Description |
 | --- | --- | --- |
-| `STATE_RESOURCE_GROUP` | Optional unless storing state in Azure | Resource group used for Terraform state |
-| `STATE_STORAGE_ACCOUNT_NAME` | Optional unless storing state in Azure |  Storage account name for Terraform state |
-| `STATE_CONTAINER_NAME` | Optional unless storing state in Azure |  Storage account container for Terraform state |
-| `STATE_KEY_NAME` | Optional unless storing state in Azure |  The name of the state file in the container. |
 | `DEPLOY_RESOURCE_GROUP` | Required | Azure Resource Group used for deploying resources |
 | `DEPLOY_STORAGE_ACCOUNT_NAME` | Required | The name of the storage account to be deployed/managed by Terraform |
+| `STATE_RESOURCE_GROUP` | Required if storing state in Azure | Resource group used for Terraform state |
+| `STATE_STORAGE_ACCOUNT_NAME` | Required if storing state in Azure |  Storage account name for Terraform state |
+| `STATE_CONTAINER_NAME` | Required if storing state in Azure |  Storage account container for Terraform state |
+| `STATE_KEY_NAME` | Required if storing state in Azure |  The name of the state file in the container. |
 
 ### Authenticating to Azure
 
@@ -67,7 +67,11 @@ Log into Azure CLI with `az login`.
 
 ### Terraform Init
 
-From the `infra` folder, you can configure your system to use local state files simply by running `terraform init`.
+From the `infra` folder, you can configure your system to use local state files simply by running:
+
+```bash
+terraform init
+```
 
 If you wish to use a state file stored in Azure in the same manner that GitHub Actions is configured to, you can pass parameters to the init command:
 
