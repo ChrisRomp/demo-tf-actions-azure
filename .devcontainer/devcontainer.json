@@ -1,5 +1,5 @@
 {
-    "name": "Default Linux Universale",
+    "name": "Default Linux Universal",
     "image": "mcr.microsoft.com/vscode/devcontainers/universal:latest",
     "remoteUser": "codespace",
     "features": {
