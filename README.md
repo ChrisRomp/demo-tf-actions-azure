@@ -30,7 +30,7 @@ We are again using OIDC to authenticate to the state store as a service principa
 
 ## Demo Scenarios
 
-- Creating a pull request and seeing the result of `terraform plan` in the Actions log
+- Creating a pull request and seeing the result of `terraform plan` in the Pull Request comments and Actions log
 - Running the Terraform Audit action manually with a good configuration
 - Changing your storage account configuration and running the Terraform Audit action to see the error status
 
