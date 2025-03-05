@@ -5,7 +5,7 @@
     "features": {
         "ghcr.io/devcontainers/features/azure-cli:1": {},
         "ghcr.io/devcontainers/features/terraform:1": {
-            "version": "latest",
+            "version": "1.10.5",
             "tflint": "latest",
             "terragrunt": "0.57.8" // checksum issue with 0.57.9
         }
